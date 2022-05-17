@@ -3,7 +3,7 @@
 //% weight=5 color=#2E8B57 icon="\uf3fc" block="显示屏"
 namespace hetaolcd {
 
-    const hkz16 : uint8[] = 
+    const hkz16: uint8[] =
         [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -16745,41 +16745,48 @@ namespace hetaolcd {
                 let index = code - 19968;
                 strOut += "%" + z.substr(index * 4, 2) + "%" + z.substr(index * 4 + 2, 2);
             }
+            else {
+                strOut += "%" + z.substr(code * 4, 2) + "%" + z.substr(code * 4 + 2, 2);
+            }
         }
         return strOut;
     }
 
     //% blockId="hetao_lcd_show_string" block="显示字符串 %str| 在 行%y| 列%x|"
     export function showString(str: string, y: number, x: number) {
+        //带中文字符
         if (true) {
             let buf = Buffer.create(0)
             for (let i = 0; i < str.length; i++) {
+                let offset = 0;
                 if (str.charCodeAt(i) > 19968) {
                     let qq = encodeToGb2312(str[i])
                     let gbk = qq.split("%")
-                    let qu = parseInt(gbk[1], 16) - 160 -1
+                    let qu = parseInt(gbk[1], 16) - 160 - 1
                     let ku = parseInt(gbk[2], 16) - 160 - 1
-                    let offset = (94 * qu + ku)* 32;
-                    let hh = hkz16.slice(offset, offset+32)
-                    buf.concat(Buffer.fromArray(hh))
-                    for (let k = 0; k < 16; k++) {
-                        let ps = ""
-                        for (let j = 0; j < 2; j++) {
-                            for (let m = 0; m < 8; m++) {
-                                let flag = hh[k * 2 + j] & keyP[m];
-                                if (flag) {
-                                    ps += "● "
-                                }
-                                else {
-                                    ps += "○ "
-                                }
+                    offset = (94 * qu + ku) * 32;
+                }
+                else {
+                    offset = (188 + str.charCodeAt(i) - 33) * 32
+                }
+                let hh = hkz16.slice(offset, offset + 32)
+                buf.concat(Buffer.fromArray(hh))
+                for (let k = 0; k < 16; k++) {
+                    let ps = ""
+                    for (let j = 0; j < 2; j++) {
+                        for (let m = 0; m < 8; m++) {
+                            let flag = hh[k * 2 + j] & keyP[m];
+                            if (flag) {
+                                ps += "● "
+                            }
+                            else {
+                                ps += "○ "
                             }
                         }
-                        console.log(ps)
                     }
-                } else {
-                    buf.concat(Buffer.fromUTF8(str[i]))
+                    console.log(ps)
                 }
+                console.log("---------")
             }
             let addrBuf1 = Buffer.create(1)
             addrBuf1[0] = 64 + y * 16 + 0
