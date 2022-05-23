@@ -31,7 +31,7 @@ enum HetaoLcdChinese {
 //% weight=5 color=#2E8B57 icon="\uf26c" block="显示屏"
 namespace hetaolcd {
 
-    // 温度, 湿度, 量子兔, 智能, 显示, 年, 月, 日, 时, 分, 秒
+    // 温度, 湿度, 量子兔, 智能, 显示, 年, 月, 日, 时, 分, 秒, ℃
     const chineseEnumCode: uint8[][] = [
         [0, 8, 67, 252, 50, 8, 18, 8, 131, 248, 98, 8, 34, 8, 11, 248, 16, 0, 39, 252, 228, 164, 36, 164, 36, 164, 36, 164, 47, 254, 32, 0,
             1, 0, 0, 132, 63, 254, 34, 32, 34, 40, 63, 252, 34, 32, 35, 224, 32, 0, 47, 240, 34, 32, 33, 64, 32, 128, 67, 96, 140, 30, 48, 4],
@@ -49,10 +49,13 @@ namespace hetaolcd {
         [0, 16, 31, 248, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 31, 240, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 31, 240, 16, 16, 0, 0],
         [0, 8, 4, 8, 126, 8, 68, 8, 71, 254, 68, 8, 68, 8, 124, 136, 68, 72, 68, 72, 68, 8, 68, 8, 124, 8, 68, 72, 0, 40, 0, 16],
         [0, 128, 4, 128, 4, 64, 8, 64, 8, 32, 16, 16, 32, 8, 79, 238, 132, 36, 4, 32, 4, 32, 4, 32, 4, 32, 8, 32, 17, 64, 32, 128],
-        [4, 32, 14, 32, 120, 32, 8, 32, 8, 168, 254, 166, 8, 162, 29, 32, 26, 36, 40, 36, 40, 40, 72, 16, 136, 32, 8, 64, 8, 128, 11, 0]
+        [4, 32, 14, 32, 120, 32, 8, 32, 8, 168, 254, 166, 8, 162, 29, 32, 26, 36, 40, 36, 40, 40, 72, 16, 136, 32, 8, 64, 8, 128, 11, 0],
+        [0x60, 0x00, 0x93, 0xF4, 0x94, 0x0C, 0x68, 0x04, 0x08, 0x04, 0x10, 0x00, 0x10, 0x00, 0x10, 0x00,
+            0x10, 0x00, 0x10, 0x00, 0x10, 0x00, 0x08, 0x04, 0x08, 0x04, 0x04, 0x08, 0x03, 0xF0, 0x00, 0x00]
     ]
 
     const keyP: uint8[] = [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01];
+    const posP: uint8[] = [7, 6, 5, 4, 3, 2, 1, 0];
 
     //% blockId="hetao_lcd_show_string" block="显示字符串 %str| 在 行%y| 列%x|"
     export function showString(str: string, y: number, x: number) {
@@ -62,30 +65,67 @@ namespace hetaolcd {
         pins.i2cWriteBuffer(9, addrBuf.concat(buf))
     }
 
+    function changeMatrix(h: uint8[]): Buffer {
+        let l = Buffer.create(h.length)
+        for (let n = 0; n < h.length; n += 32) {
+            for (let k = 0; k < 8; k++) {
+                for (let i = 0; i < 8; i++) {
+                    l[k + n] += ((h[2 * i + n] & (keyP[k])) >> posP[k]) << posP[i]
+                    l[8 + k + n] += ((h[2 * i + 16 + n] & (keyP[k])) >> posP[k]) << posP[i]
+                    l[16 + k + n] += ((h[2 * i + 1 + n] & (keyP[k])) >> posP[k]) << posP[i]
+                    l[24 + k + n] += ((h[2 * i + 17 + n] & (keyP[k])) >> posP[k]) << posP[i]
+                }
+            }
+        }
+        return l
+    }
+
     //% blockId="hetao_lcd_show_chinese_string" block="显示%str| 在 行%y| 列%x|"
     export function showChineseString(strChinese: HetaoLcdChinese, y: number, x: number) {
-        if (strChinese < 11) {
+        if (strChinese < 12) {
             let addrBuf1 = Buffer.create(1)
-            addrBuf1[0] = 64 + y * 16 + 0
-            addrBuf1 = addrBuf1.concat(Buffer.fromArray(chineseEnumCode[strChinese]))
+            addrBuf1[0] = 64 + y * 16 + x
+            let cm = changeMatrix(chineseEnumCode[strChinese])
+            console.log(cm.length)
+            addrBuf1 = addrBuf1.concat(cm)
             pins.i2cWriteBuffer(9, addrBuf1)
             console.log(strChinese.toString())
-            for (let k = 0; k < 16; k++) {
-                let ps = ""
-                for (let j = 0; j < 2; j++) {
-                    for (let m = 0; m < 8; m++) {
-                        let flag = chineseEnumCode[strChinese][k * 2 + j] & keyP[m];
-                        if (flag) {
-                            ps += "● "
-                        }
-                        else {
-                            ps += "○ "
+            for (let q = 0; q < cm.length; q += 32) {
+                for (let k = 0; k < 16; k++) {
+                    let ps = ""
+                    for (let j = 0; j < 2; j++) {
+                        for (let m = 0; m < 8; m++) {
+                            let flag = chineseEnumCode[strChinese][q + k * 2 + j] & keyP[m];
+                            if (flag) {
+                                ps += "● "
+                            }
+                            else {
+                                ps += "○ "
+                            }
                         }
                     }
+                    console.log(ps)
                 }
-                console.log(ps)
+                console.log("to---------to")
+                for (let n = 0; n < 2; n++) {
+                    for (let k = 0; k < 8; k++) {
+                        let ps = ""
+                        for (let j = 0; j < 2; j++) {
+                            for (let m = 0; m < 8; m++) {
+                                let flag = cm[q + n * 8 + m + j * 16] & keyP[k];
+                                if (flag) {
+                                    ps += "● "
+                                }
+                                else {
+                                    ps += "○ "
+                                }
+                            }
+                        }
+                        console.log(ps)
+                    }
+                }
+                console.log("---------")
             }
-            console.log("---------")
         } else {
             let str = ""
             if (strChinese == HetaoLcdChinese.centigrade) {

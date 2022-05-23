@@ -1,1 +1,1 @@
-
+<xml xmlns="https://developers.google.com/blockly/xml"><block type="device_button_event" id="r=t]k/-$8YaPFX):CG}{" x="0" y="0"><field name="NAME">Button.A</field><statement name="HANDLER"><block type="hetao_lcd_show_chinese_string" id="],4^JKjuJ#g$F{@hA-c`"><field name="str">HetaoLcdChinese.centigrade</field><value name="y"><shadow type="math_number" id="HXZ8]g{N|pG~Un0}).go"><field name="NUM">0</field></shadow></value><value name="x"><shadow type="math_number" id="AA8)h?+]8pN$*h^9?C1{"><field name="NUM">0</field></shadow></value></block></statement></block></xml>
