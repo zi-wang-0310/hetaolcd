@@ -86,46 +86,8 @@ namespace hetaolcd {
             let addrBuf1 = Buffer.create(1)
             addrBuf1[0] = 64 + y * 16 + x
             let cm = changeMatrix(chineseEnumCode[strChinese])
-            console.log(cm.length)
             addrBuf1 = addrBuf1.concat(cm)
             pins.i2cWriteBuffer(9, addrBuf1)
-            console.log(strChinese.toString())
-            for (let q = 0; q < cm.length; q += 32) {
-                for (let k = 0; k < 16; k++) {
-                    let ps = ""
-                    for (let j = 0; j < 2; j++) {
-                        for (let m = 0; m < 8; m++) {
-                            let flag = chineseEnumCode[strChinese][q + k * 2 + j] & keyP[m];
-                            if (flag) {
-                                ps += "● "
-                            }
-                            else {
-                                ps += "○ "
-                            }
-                        }
-                    }
-                    console.log(ps)
-                }
-                console.log("to---------to")
-                for (let n = 0; n < 2; n++) {
-                    for (let k = 0; k < 8; k++) {
-                        let ps = ""
-                        for (let j = 0; j < 2; j++) {
-                            for (let m = 0; m < 8; m++) {
-                                let flag = cm[q + n * 8 + m + j * 16] & keyP[k];
-                                if (flag) {
-                                    ps += "● "
-                                }
-                                else {
-                                    ps += "○ "
-                                }
-                            }
-                        }
-                        console.log(ps)
-                    }
-                }
-                console.log("---------")
-            }
         } else {
             let str = ""
             if (strChinese == HetaoLcdChinese.centigrade) {
